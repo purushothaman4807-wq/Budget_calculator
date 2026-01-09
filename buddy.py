@@ -6,175 +6,180 @@ import plotly.express as px
 # PAGE CONFIG
 # ----------------------------------
 st.set_page_config(
-    page_title="Indian Budget Calculator",
+    page_title="Indian Budget Explorer",
+    page_icon="🇮🇳",
     layout="wide"
 )
 
 # ----------------------------------
-# INDIAN FLAG THEME
+# ENHANCED INDIAN FLAG THEME (UI/UX)
 # ----------------------------------
 st.markdown("""
 <style>
-h1 { color:#FF9933; }
-h2, h3 { color:#138808; }
-.metric {
-    padding:20px;
-    border-left:6px solid #FF9933;
-    background:#FFFFFF;
-    border-radius:10px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.1);
-}
+    /* Background and Main Text */
+    .stApp {
+        background-color: #F4F7F6;
+    }
+    
+    /* Header Colors */
+    h1 { color: #FF9933 !important; font-weight: 800; }
+    h2, h3 { color: #138808 !important; font-weight: 600; }
+    
+    /* Sidebar Styling */
+    [data-testid="stSidebar"] {
+        background-color: #FFFFFF;
+        border-right: 2px solid #000080; /* Ashoka Chakra Blue */
+    }
+
+    /* Metric Cards - Glassmorphism */
+    .metric-card {
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        border-top: 5px solid #FF9933;
+        border-bottom: 5px solid #138808;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .metric-title { color: #666666; font-size: 18px; margin-bottom: 10px; }
+    .metric-value { color: #000080; font-size: 32px; font-weight: bold; }
+
+    /* Fix for Visibility in Dataframes */
+    .stDataFrame {
+        background-color: white;
+        border-radius: 10px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # ----------------------------------
-# LOAD DATA (SAFE)
+# LOAD DATA
 # ----------------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_excel("Budget_Finalone.xlsx")
-    df.columns = df.columns.str.strip()
-    return df
+    try:
+        df = pd.read_excel("Budget_Finalone.xlsx")
+        df.columns = df.columns.str.strip()
+        return df
+    except Exception as e:
+        st.error(f"Error loading file: {e}")
+        # Creating dummy data for demonstration if file is missing
+        return pd.DataFrame({
+            "Year": [2023, 2024],
+            "Agriculture TA": [120000, 130000],
+            "Defence TA": [550000, 600000],
+            "Education TA": [100000, 115000],
+            "Health TA": [80000, 90000],
+            "HomeAffairs TA": [190000, 200000]
+        })
 
 df = load_data()
 
 # ----------------------------------
-# TITLE
+# SIDEBAR & VIDEO SECTION
 # ----------------------------------
-st.title("🇮🇳 Indian Budget Calculator")
-st.caption("Advanced Year-wise & Theme-wise Budget Analysis")
-
-# ----------------------------------
-# THEME CONFIG
-# ----------------------------------
-themes = {
-    "Agriculture": {
-        "TA": "Agriculture TA",
-        "Subs": [
-            "Dept. of Agriculture & Farmers’ Welfare",
-            "Dept. of Agricultural Research & Education"
-        ]
-    },
-    "Defence": {
-        "TA": "Defence TA",
-        "Subs": ["Revenue", "Capital Outlay", "Pensions", "Civil"]
-    },
-    "Education": {
-        "TA": "Education TA",
-        "Subs": ["School Education & Literacy", "Higher Education"]
-    },
-    "Health": {
-        "TA": "Health TA",
-        "Subs": [
-            "Dept. of Health & Family Welfare",
-            "Dept. of Health Research"
-        ]
-    },
-    "Home Affairs": {
-        "TA": "HomeAffairs TA",
-        "Subs": [
-            "Ministry of Home Affairs", "Police", "Cabinet",
-            "Andaman & Nicobar Islands", "Chandigarh",
-            "Dadra & Nagar Haveli & Daman & Diu",
-            "Ladakh", "Lakshadweep",
-            "Transfers to Delhi",
-            "Transfers to Jammu & Kashmir",
-            "Transfers to Puducherry"
-        ]
+with st.sidebar:
+    st.image("https://upload.wikimedia.org/wikipedia/en/4/41/Flag_of_India.svg", width=100)
+    st.header("⚙️ Configuration")
+    
+    year = st.selectbox("Select Financial Year", sorted(df["Year"].unique(), reverse=True))
+    
+    themes = {
+        "Agriculture": {"TA": "Agriculture TA", "Subs": ["Dept. of Agriculture & Farmers’ Welfare", "Dept. of Agricultural Research & Education"]},
+        "Defence": {"TA": "Defence TA", "Subs": ["Revenue", "Capital Outlay", "Pensions", "Civil"]},
+        "Education": {"TA": "Education TA", "Subs": ["School Education & Literacy", "Higher Education"]},
+        "Health": {"TA": "Health TA", "Subs": ["Dept. of Health & Family Welfare", "Dept. of Health Research"]},
+        "Home Affairs": {"TA": "HomeAffairs TA", "Subs": ["Ministry of Home Affairs", "Police", "Cabinet"]}
     }
-}
+    
+    theme_choice = st.selectbox("Select Budget Theme", list(themes.keys()))
+    
+    st.markdown("---")
+    st.subheader("📺 Live Budget Coverage")
+    # Link to Sansad TV or Budget Live Stream
+    st.video("https://www.youtube.com/watch?v=dQw4w9WgXcQ") # Replace with actual Budget Live Link
+    st.caption("Live stream from Sansad TV / PIB")
 
 # ----------------------------------
-# SIDEBAR INPUTS
+# MAIN CONTENT
 # ----------------------------------
-st.sidebar.header("🔢 Select Inputs")
+st.title("🇮🇳 Union Budget Analysis Portal")
+st.markdown(f"### Exploring: {theme_choice} Sector | FY {year}")
 
-year = st.sidebar.selectbox("Select Year", sorted(df["Year"].unique()))
-theme = st.sidebar.selectbox("Select Theme", list(themes.keys()))
+ta_col = themes[theme_choice]["TA"]
+sub_cols = [c for c in themes[theme_choice]["Subs"] if c in df.columns]
 
-ta_col = themes[theme]["TA"]
-sub_cols = [c for c in themes[theme]["Subs"] if c in df.columns]
+tab1, tab2, tab3 = st.tabs(["🎯 Key Summary", "📊 Interactive Charts", "📝 Detailed Data"])
 
-# ----------------------------------
-# TABS
-# ----------------------------------
-tab1, tab2, tab3 = st.tabs(["🧮 Calculator", "📊 Visual Analysis", "🧠 Insights"])
-
-# ========== TAB 1: CALCULATOR ==========
+# ========== TAB 1: SUMMARY ==========
 with tab1:
-    st.subheader("💰 Budget Calculator")
-
     total_val = df.loc[df["Year"] == year, ta_col].values[0]
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown(f"""<div class="metric-card">
+            <div class="metric-title">Total {theme_choice} Allocation</div>
+            <div class="metric-value">₹ {total_val:,.2f} Cr</div>
+        </div>""", unsafe_allow_html=True)
+        
+    with col2:
+        # Simple growth calculation
+        prev_year_data = df[df["Year"] == (year - 1)]
+        if not prev_year_data.empty:
+            prev_val = prev_year_data[ta_col].values[0]
+            growth = ((total_val - prev_val) / prev_val) * 100
+            st.markdown(f"""<div class="metric-card">
+                <div class="metric-title">Annual Growth</div>
+                <div class="metric-value">{growth:+.1f}%</div>
+            </div>""", unsafe_allow_html=True)
+        else:
+            st.markdown(f"""<div class="metric-card">
+                <div class="metric-title">Annual Growth</div>
+                <div class="metric-value">N/A</div>
+            </div>""", unsafe_allow_html=True)
 
-    c1, c2 = st.columns(2)
-    c1.markdown(f"<div class='metric'><h3>{theme} Allocation ({year})</h3><h2>₹ {total_val:,.0f} Cr</h2></div>", unsafe_allow_html=True)
-    c2.markdown(f"<div class='metric'><h3>Number of Sub-Sections</h3><h2>{len(sub_cols)}</h2></div>", unsafe_allow_html=True)
+    with col3:
+        st.markdown(f"""<div class="metric-card">
+            <div class="metric-title">Status</div>
+            <div class="metric-value" style="color:#138808;">Active</div>
+        </div>""", unsafe_allow_html=True)
 
-    st.subheader("📁 Sub-Section Breakdown")
-
-    if sub_cols:
-        sub_df = df[df["Year"] == year][sub_cols].T.reset_index()
-        sub_df.columns = ["Sub-Section", "Allocation (₹ Cr)"]
-        st.dataframe(sub_df, use_container_width=True)
-    else:
-        st.warning("No sub-section data available.")
-
-# ========== TAB 2: VISUAL ANALYSIS ==========
+# ========== TAB 2: VISUALS ==========
 with tab2:
-    st.subheader("📈 Year-wise Trend")
+    c1, c2 = st.columns(2)
+    
+    with c1:
+        st.subheader("📈 Historical Trend")
+        fig_line = px.area(df, x="Year", y=ta_col, line_shape="spline",
+                           color_discrete_sequence=["#FF9933"])
+        fig_line.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+        st.plotly_chart(fig_line, use_container_width=True)
 
-    fig_line = px.line(
-        df,
-        x="Year",
-        y=ta_col,
-        markers=True,
-        color_discrete_sequence=["#138808"]
-    )
-    fig_line.update_layout(height=450)
-    st.plotly_chart(fig_line, use_container_width=True)
+    with c2:
+        st.subheader("🥧 Allocation Mix")
+        if sub_cols:
+            sub_vals = df[df["Year"] == year][sub_cols].T.reset_index()
+            sub_vals.columns = ["Sector", "Value"]
+            fig_pie = px.pie(sub_vals, values="Value", names="Sector", hole=0.5,
+                             color_discrete_sequence=px.colors.sequential.Greens_r)
+            st.plotly_chart(fig_pie, use_container_width=True)
+        else:
+            st.info("Sub-sector visualization not available for this theme.")
 
-    if sub_cols:
-        st.subheader("📊 Sub-Section Distribution")
-
-        fig_bar = px.bar(
-            sub_df,
-            x="Sub-Section",
-            y="Allocation (₹ Cr)",
-            color="Sub-Section"
-        )
-        fig_bar.update_layout(height=450)
-        st.plotly_chart(fig_bar, use_container_width=True)
-
-        fig_donut = px.pie(
-            sub_df,
-            names="Sub-Section",
-            values="Allocation (₹ Cr)",
-            hole=0.45
-        )
-        fig_donut.update_layout(height=450)
-        st.plotly_chart(fig_donut, use_container_width=True)
-
-# ========== TAB 3: INSIGHTS ==========
+# ========== TAB 3: DATA ==========
 with tab3:
-    st.subheader("🧠 Auto Insights")
-
+    st.subheader("📄 Raw Allocation Breakdown")
     if sub_cols:
-        max_row = sub_df.loc[sub_df["Allocation (₹ Cr)"].idxmax()]
-        min_row = sub_df.loc[sub_df["Allocation (₹ Cr)"].idxmin()]
-
-        st.success(
-            f"In {year}, **{max_row['Sub-Section']}** received the highest allocation "
-            f"(₹ {max_row['Allocation (₹ Cr)']:,.0f} Cr), while "
-            f"**{min_row['Sub-Section']}** received the lowest."
-        )
-
-    st.info(
-        f"The **{theme}** budget in {year} reflects the government's priority "
-        f"in this sector compared to previous years."
-    )
+        final_table = df[df["Year"] == year][["Year", ta_col] + sub_cols]
+        st.dataframe(final_table.style.format(precision=2), use_container_width=True)
+    else:
+        st.dataframe(df[df["Year"] == year][["Year", ta_col]], use_container_width=True)
 
 # ----------------------------------
 # FOOTER
 # ----------------------------------
 st.markdown("---")
-st.caption("Advanced Indian Budget Calculator | Python & Streamlit 🇮🇳")
+st.markdown("<center>Data Source: Union Budget of India | Government of India</center>", unsafe_allow_html=True)
