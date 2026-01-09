@@ -87,25 +87,26 @@ def load_data():
         return df
     except:
         # Fallback to demo data if file missing
-        data = {"Year": [2023, 2024, 2025], "HomeAffairs TA": [100, 110, 120], "Police": [40, 45, 50]}
+        data = {"Year": [2023, 2024, 2025], "HomeAffairs TA": [100, 110, 120], "Health TA": [80, 85, 90]}
         return pd.DataFrame(data)
 
 df = load_data()
 
 # ----------------------------------
-# 4. MINISTRY CONFIG
+# 4. MINISTRY CONFIG (HEALTH ADDED)
 # ----------------------------------
 themes = {
     "Home Affairs": {"TA": "HomeAffairs TA", "Subs": ["Ministry of Home Affairs", "Police", "Cabinet", "Ladakh", "Transfers to Jammu & Kashmir", "Chandigarh", "Lakshadweep", "Andaman & Nicobar Islands"]},
     "Defence": {"TA": "Defence TA", "Subs": ["Revenue", "Capital Outlay", "Pensions", "Civil"]},
     "Agriculture": {"TA": "Agriculture TA", "Subs": ["Dept. of Agriculture & Farmers’ Welfare", "Dept. of Agricultural Research & Education"]},
-    "Education": {"TA": "Education TA", "Subs": ["School Education & Literacy", "Higher Education"]}
+    "Education": {"TA": "Education TA", "Subs": ["School Education & Literacy", "Higher Education"]},
+    "Health": {"TA": "Health TA", "Subs": ["Dept. of Health & Family Welfare", "Dept. of Health Research"]}
 }
 
 # ----------------------------------
 # 5. SIDEBAR CONTROLS
 # ----------------------------------
-st.sidebar.markdown("<br><br>", unsafe_allow_html=True) # Prevent overlap with top ticker
+st.sidebar.markdown("<br><br>", unsafe_allow_html=True) 
 st.sidebar.image("https://upload.wikimedia.org/wikipedia/en/4/41/Flag_of_India.svg", width=100)
 st.sidebar.title("🎛️ Terminal Controls")
 
@@ -148,10 +149,12 @@ with c1:
 
 with c2:
     st.subheader("🗺️ Budget Distribution (Treemap)")
-    if sub_cols:
+        if sub_cols:
         sub_vals = df[df["Year"] == selected_year][sub_cols].T.reset_index()
         sub_vals.columns = ["Dept", "Val"]
         fig3 = px.treemap(sub_vals, path=['Dept'], values='Val', color='Val', color_continuous_scale='Greens')
         st.plotly_chart(fig3, use_container_width=True)
+    else:
+        st.info(f"No detailed sub-sector data found for {selected_theme} in the current year.")
 
 st.markdown('</div>', unsafe_allow_html=True)
