@@ -84,7 +84,6 @@ def load_data():
     try:
         df = pd.read_excel("Budget_Finalone.xlsx")
         df.columns = df.columns.str.strip()
-        # Clean numeric data (replace '-' with 0)
         df = df.replace('-', 0)
         return df
     except:
@@ -94,7 +93,7 @@ def load_data():
 df = load_data()
 
 # ----------------------------------
-# 4. MINISTRY THEMES
+# 4. MINISTRY THEMES (INCLUDING HEALTH)
 # ----------------------------------
 themes = {
     "Home Affairs": {"TA": "HomeAffairs TA", "Subs": ["Ministry of Home Affairs", "Police", "Cabinet", "Ladakh", "Transfers to Jammu & Kashmir", "Chandigarh", "Lakshadweep", "Andaman & Nicobar Islands"]},
@@ -111,7 +110,7 @@ st.sidebar.markdown("<br><br>", unsafe_allow_html=True)
 st.sidebar.image("https://upload.wikimedia.org/wikipedia/en/4/41/Flag_of_India.svg", width=100)
 
 st.sidebar.subheader("📺 Live Broadcast")
-st.sidebar.video("https://www.youtube.com/watch?v=u_EKL_CfY5k") # Sansad TV Live
+st.sidebar.video("https://www.youtube.com/watch?v=u_EKL_CfY5k")
 
 st.sidebar.title("🎛️ Terminal Controls")
 selected_year = st.sidebar.selectbox("Fiscal Year", sorted(df["Year"].unique(), reverse=True))
@@ -129,8 +128,8 @@ st.title(f"🇮🇳 {selected_theme.upper()} COMMAND CENTER")
 
 # Calculations
 current_val = df.loc[df["Year"] == selected_year, ta_col].values[0]
-prev_year = df.loc[df["Year"] == (selected_year - 1), ta_col]
-growth = ((current_val - prev_year.values[0]) / prev_year.values[0] * 100) if not prev_year.empty else 0
+prev_year_rows = df.loc[df["Year"] == (selected_year - 1), ta_col]
+growth = ((current_val - prev_year_rows.values[0]) / prev_year_rows.values[0] * 100) if not prev_year_rows.empty else 0
 
 # KPI Row
 m1, m2, m3 = st.columns(3)
@@ -154,10 +153,10 @@ with c1:
 
 with c2:
     st.subheader("🗺️ Sector Distribution")
-        if sub_cols:
+    # THE TREEMAP BLOCK (FIXED INDENTATION)
+    if sub_cols:
         sub_vals = df[df["Year"] == selected_year][sub_cols].T.reset_index()
         sub_vals.columns = ["Dept", "Val"]
-        # Convert values to numeric to avoid errors
         sub_vals["Val"] = pd.to_numeric(sub_vals["Val"], errors='coerce').fillna(0)
         
         fig2 = px.treemap(sub_vals, path=['Dept'], values='Val', color='Val', color_continuous_scale='Greens')
